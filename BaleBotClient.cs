@@ -10,20 +10,24 @@ using System.Text.Json.Serialization;
 namespace Bale.API.Client
 {
     /// <summary>
-    /// پیاده‌سازی کامل کلاینت API ربات بله (نسخه بدون لاگ داخلی).
+    /// پیاده‌سازی کامل کلاینت API ربات بله (نسخه با آدرس پایه داخلی).
     /// </summary>
     public class BaleBotClient : IBaleBotClient
     {
-        private readonly HttpClient _httpClient;
+        private readonly IHttpClientFactory _httpClientFactory;
         private readonly BaleBotClientOptions _options;
         private readonly JsonSerializerOptions _jsonSerializerOptions;
 
-        public BaleBotClient(HttpClient httpClient, IOptions<BaleBotClientOptions> options)
+        // آدرس پایه API بله به صورت ثابت در اینجا تعریف شده است.
+        private const string BaleApiBaseUrl = "https://tapi.bale.ai/";
+
+        public BaleBotClient(IHttpClientFactory httpClientFactory, IOptions<BaleBotClientOptions> options)
         {
-            _httpClient = httpClient;
+            _httpClientFactory = httpClientFactory;
             _options = options.Value;
             _jsonSerializerOptions = new JsonSerializerOptions
             {
+                // این گزینه باعث می‌شود فیلدهای null در زمان ارسال JSON نادیده گرفته شوند.
                 DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
             };
         }
@@ -179,43 +183,55 @@ namespace Bale.API.Client
         }
         #endregion
 
-
-        #region متدهای کمکی خصوصی (Private Helper Methods)
-
+        #region متدهای کمکی خصوصی
         private async Task<BaleApiResponse<TResponse>> GetAsync<TResponse>(string method)
         {
-            // 🔥 تغییر: حالا از آدرس نسبی استفاده می‌کنیم چون BaseAddress از قبل تنظیم شده
-            var response = await _httpClient.GetAsync($"bot{_options.BotToken}/{method}");
-            return await ProcessResponse<TResponse>(response);
+            try
+            {
+                var client = _httpClientFactory.CreateClient();
+                var fullUrl = $"{BaleApiBaseUrl}bot{_options.BotToken}/{method}";
+                var response = await client.GetAsync(fullUrl);
+                return await ProcessResponse<TResponse>(response);
+            }
+            catch (Exception ex)
+            {
+                // پرتاب استثنا برای اینکه لایه بالاتر بتواند آن را مدیریت کند
+                throw new BaleApiException($"Request failed for method '{method}'. See inner exception for details.", HttpStatusCode.ServiceUnavailable, ex.Message, ex);
+            }
         }
 
         private async Task<BaleApiResponse<TResponse>> PostAsync<TResponse>(string method, object payload)
         {
-            var jsonContent = new StringContent(JsonSerializer.Serialize(payload, _jsonSerializerOptions), Encoding.UTF8, "application/json");
-            // 🔥 تغییر: حالا از آدرس نسبی استفاده می‌کنیم
-            var response = await _httpClient.PostAsync($"bot{_options.BotToken}/{method}", jsonContent);
-            return await ProcessResponse<TResponse>(response);
+            try
+            {
+                var client = _httpClientFactory.CreateClient();
+                var fullUrl = $"{BaleApiBaseUrl}bot{_options.BotToken}/{method}";
+                var jsonContent = new StringContent(JsonSerializer.Serialize(payload, _jsonSerializerOptions), Encoding.UTF8, "application/json");
+                var response = await client.PostAsync(fullUrl, jsonContent);
+                return await ProcessResponse<TResponse>(response);
+            }
+            catch (Exception ex)
+            {
+                throw new BaleApiException($"Request failed for method '{method}'. See inner exception for details.", HttpStatusCode.ServiceUnavailable, ex.Message, ex);
+            }
         }
 
         private async Task<BaleApiResponse<TResponse>> ProcessResponse<TResponse>(HttpResponseMessage response)
         {
-            // این متد بدون تغییر باقی می‌ماند
             if (response.IsSuccessStatusCode)
             {
                 var baleResponse = await response.Content.ReadFromJsonAsync<BaleApiResponse<TResponse>>();
-                if (baleResponse != null && baleResponse.Ok)
+                if (baleResponse != null)
                 {
+                    // چه موفق باشد (Ok=true) چه نباشد، آبجکت کامل را برمی‌گردانیم
                     return baleResponse;
                 }
-
-                var errorDesc = (await response.Content.ReadFromJsonAsync<BaleErrorResponse>())?.Description;
-                throw new BaleApiException(errorDesc ?? "Bale API returned OK=false but no description.", response.StatusCode);
+                throw new BaleApiException("Failed to deserialize successful response.", response.StatusCode);
             }
 
             var errorContent = await response.Content.ReadAsStringAsync();
             throw new BaleApiException($"Request failed with status code {response.StatusCode}.", response.StatusCode, errorContent);
         }
-
-        #endregion    
+        #endregion
     }
 }

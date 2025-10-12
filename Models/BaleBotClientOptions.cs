@@ -15,11 +15,5 @@ namespace Bale.API.Client.Models
         /// توکن احراز هویت ربات که از BotFather دریافت می‌شود.
         /// </summary>
         public string BotToken { get; set; } = string.Empty;
-
-        /// <summary>
-        /// آدرس پایه API بازوی بله.
-        /// این مقدار به صورت پیش‌فرض تنظیم شده است اما توسط کاربر قابل تغییر است.
-        /// </summary>
-        public string BaseUrl { get; set; } = "https://tapi.bale.ai/";
     }
 }
