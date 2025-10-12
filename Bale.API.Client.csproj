@@ -6,7 +6,7 @@
 		<Nullable>enable</Nullable>
 
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-		<PackageId>Mohammad.Bale.Bot.Client</PackageId>
+		<PackageId>Bale.Bot.Client.Mr.Arbab</PackageId>
 
 		<Version>1.0.5</Version>
 
