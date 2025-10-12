@@ -50,7 +50,7 @@ JSON
 C#
 
 // فراموش نکنید که using مربوط به کتابخانه را اضافه کنید
-using Bale.Bot.Client; 
+using Bale.API.Client; 
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -71,8 +71,9 @@ var app = builder.Build();
 
 C#
 
-using Bale.Bot.Client.Interfaces;
-using Bale.Bot.Client.Models;
+using Bale.API.Client.Interfaces; // اینترفیس اصلی
+using Bale.API.Client.Models;     // مدل‌ها
+using Bale.API.Client.Exceptions; // استثناهای سفارشی
 using Microsoft.AspNetCore.Mvc;
 
 [ApiController]
@@ -98,10 +99,10 @@ public class BotController : ControllerBase
             User botInfo = await _baleClient.GetMeAsync();
             return Ok(botInfo);
         }
-        catch (Exception ex)
+        catch (BaleApiException ex)
         {
             // مدیریت خطاها در بخش "مدیریت خطاها" توضیح داده شده است
-            return BadRequest(ex.Message);
+            return StatusCode((int)ex.StatusCode, new { Error = ex.Message, Details = ex.ErrorContent });
         }
     }
 
@@ -117,9 +118,9 @@ public class BotController : ControllerBase
             Message sentMessage = await _baleClient.SendMessageAsync(chatId, "سلام دنیا از طرف ربات!");
             return Ok(sentMessage);
         }
-        catch (Exception ex)
+        catch (BaleApiException ex)
         {
-            return BadRequest(ex.Message);
+            return StatusCode((int)ex.StatusCode, new { Error = ex.Message, Details = ex.ErrorContent });
         }
     }
 }
@@ -153,9 +154,9 @@ public async Task<IActionResult> SendMessageWithKeyboard([FromQuery] string chat
         await _baleClient.SendMessageAsync(chatId, "یک گزینه را انتخاب کنید:", replyMarkup: inlineKeyboard);
         return Ok("پیام با کیبورد ارسال شد.");
     }
-    catch (Exception ex)
+    catch (BaleApiException ex)
     {
-        return BadRequest(ex.Message);
+        return BadRequest(new { Error = ex.Message });
     }
 }
 مدیریت خطاها
@@ -163,7 +164,7 @@ public async Task<IActionResult> SendMessageWithKeyboard([FromQuery] string chat
 
 C#
 
-using Bale.Bot.Client.Exceptions;
+using Bale.API.Client.Exceptions;
 
 // ...
 
@@ -172,7 +173,7 @@ public async Task<IActionResult> GetMeSafely()
 {
     try
     {
-        var botInfo = await _baleClient.GetMeAsync();
+        User botInfo = await _baleClient.GetMeAsync();
         return Ok(botInfo);
     }
     catch (BaleApiException ex)
@@ -184,7 +185,7 @@ public async Task<IActionResult> GetMeSafely()
     catch (HttpRequestException ex)
     {
         // خطاهای کلی شبکه (مانند عدم دسترسی به اینترنت یا سرور بله)
-        return StatusCode(503, "سرویس بله در حال حاضر در دسترس نیست.");
+        return StatusCode(503, new { message = "سرویس بله در حال حاضر در دسترس نیست.", details = ex.Message });
     }
 }
 🤝 مشارکت
