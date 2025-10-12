@@ -1,11 +1,11 @@
-﻿using System.Net.Http.Json;
-using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
+﻿using Bale.API.Client.Interface;
 using Bale.API.Client.Models;
 using Microsoft.Extensions.Options;
 using System.Net;
-using Bale.API.Client.Interface;
+using System.Net.Http.Json;
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Bale.API.Client
 {
@@ -17,7 +17,6 @@ namespace Bale.API.Client
         private readonly HttpClient _httpClient;
         private readonly BaleBotClientOptions _options;
         private readonly JsonSerializerOptions _jsonSerializerOptions;
-        private const string BaleApiBaseUrl = "https://tapi.bale.ai/";
 
         public BaleBotClient(HttpClient httpClient, IOptions<BaleBotClientOptions> options)
         {
@@ -30,7 +29,6 @@ namespace Bale.API.Client
         }
 
         #region دریافت اطلاعات و آپدیت‌ها
-
         public async Task<BaleApiResponse<User>> GetMeAsync()
             => await GetAsync<User>("getMe");
 
@@ -39,11 +37,9 @@ namespace Bale.API.Client
             var payload = new { offset, limit, timeout };
             return await PostAsync<Update[]>("getUpdates", payload);
         }
-
         #endregion
 
         #region مدیریت وب‌هوک
-
         public async Task<BaleApiResponse<bool>> SetWebhookAsync(string url)
         {
             var payload = new { url };
@@ -55,11 +51,9 @@ namespace Bale.API.Client
 
         public async Task<BaleApiResponse<WebhookInfo>> GetWebhookInfoAsync()
             => await GetAsync<WebhookInfo>("getWebhookInfo");
-
         #endregion
 
         #region ارسال پیام و رسانه
-
         public async Task<BaleApiResponse<Message>> SendMessageAsync(string chatId, string text, int? replyToMessageId = null, object? replyMarkup = null)
         {
             var payload = new { chat_id = chatId, text, reply_to_message_id = replyToMessageId, reply_markup = replyMarkup };
@@ -119,11 +113,9 @@ namespace Bale.API.Client
             var payload = new { chat_id = chatId, action };
             return await PostAsync<bool>("sendChatAction", payload);
         }
-
         #endregion
 
         #region مدیریت پیام‌ها
-
         public async Task<BaleApiResponse<Message>> EditMessageTextAsync(string chatId, int messageId, string text, object? replyMarkup = null)
         {
             var payload = new { chat_id = chatId, message_id = messageId, text, reply_markup = replyMarkup };
@@ -147,11 +139,9 @@ namespace Bale.API.Client
             var payload = new { callback_query_id = callbackQueryId, text, show_alert = showAlert };
             return await PostAsync<bool>("answerCallbackQuery", payload);
         }
-
         #endregion
 
         #region مدیریت چت و کاربران
-
         public async Task<BaleApiResponse<ChatFullInfo>> GetChatAsync(string chatId)
         {
             var payload = new { chat_id = chatId };
@@ -187,45 +177,35 @@ namespace Bale.API.Client
             var payload = new { file_id = fileId };
             return await PostAsync<BaleFile>("getFile", payload);
         }
-
         #endregion
 
-        #region متدهای کمکی خصوصی
 
-        /// <summary>
-        /// یک متد کمکی برای ارسال درخواست‌های GET با استفاده از URL کامل.
-        /// </summary>
-        private async Task<TResponse> GetAsync<TResponse>(string method)
+        #region متدهای کمکی خصوصی (Private Helper Methods)
+
+        private async Task<BaleApiResponse<TResponse>> GetAsync<TResponse>(string method)
         {
-            // 🔥 تغییر: ساخت URL کامل در اینجا
-            var fullUrl = $"{BaleApiBaseUrl}bot{_options.BotToken}/{method}";
-            var response = await _httpClient.GetAsync(fullUrl);
+            // 🔥 تغییر: حالا از آدرس نسبی استفاده می‌کنیم چون BaseAddress از قبل تنظیم شده
+            var response = await _httpClient.GetAsync($"bot{_options.BotToken}/{method}");
             return await ProcessResponse<TResponse>(response);
         }
 
-     /// <summary>
-        /// یک متد کمکی برای ارسال درخواست‌های POST با استفاده از URL کامل.
-        /// </summary>
-        private async Task<TResponse> PostAsync<TResponse>(string method, object payload)
+        private async Task<BaleApiResponse<TResponse>> PostAsync<TResponse>(string method, object payload)
         {
-            // 🔥 تغییر: ساخت URL کامل در اینجا
-            var fullUrl = $"{BaleApiBaseUrl}bot{_options.BotToken}/{method}";
             var jsonContent = new StringContent(JsonSerializer.Serialize(payload, _jsonSerializerOptions), Encoding.UTF8, "application/json");
-            var response = await _httpClient.PostAsync(fullUrl, jsonContent);
+            // 🔥 تغییر: حالا از آدرس نسبی استفاده می‌کنیم
+            var response = await _httpClient.PostAsync($"bot{_options.BotToken}/{method}", jsonContent);
             return await ProcessResponse<TResponse>(response);
         }
 
-        /// <summary>
-        /// پاسخ‌های HTTP را پردازش می‌کند. این متد بدون تغییر است.
-        /// </summary>
-        private async Task<TResponse> ProcessResponse<TResponse>(HttpResponseMessage response)
+        private async Task<BaleApiResponse<TResponse>> ProcessResponse<TResponse>(HttpResponseMessage response)
         {
+            // این متد بدون تغییر باقی می‌ماند
             if (response.IsSuccessStatusCode)
             {
                 var baleResponse = await response.Content.ReadFromJsonAsync<BaleApiResponse<TResponse>>();
-                if (baleResponse?.Ok == true && baleResponse.Result != null)
+                if (baleResponse != null && baleResponse.Ok)
                 {
-                    return baleResponse.Result;
+                    return baleResponse;
                 }
 
                 var errorDesc = (await response.Content.ReadFromJsonAsync<BaleErrorResponse>())?.Description;
@@ -236,6 +216,5 @@ namespace Bale.API.Client
             throw new BaleApiException($"Request failed with status code {response.StatusCode}.", response.StatusCode, errorContent);
         }
 
-        #endregion
+        #endregion    }
     }
-}
