@@ -17,6 +17,7 @@ namespace Bale.API.Client
         private readonly HttpClient _httpClient;
         private readonly BaleBotClientOptions _options;
         private readonly JsonSerializerOptions _jsonSerializerOptions;
+        private const string BaleApiBaseUrl = "https://tapi.bale.ai/";
 
         public BaleBotClient(HttpClient httpClient, IOptions<BaleBotClientOptions> options)
         {
@@ -191,41 +192,40 @@ namespace Bale.API.Client
 
         #region متدهای کمکی خصوصی
 
-        private async Task<BaleApiResponse<TResponse>> GetAsync<TResponse>(string method)
+        /// <summary>
+        /// یک متد کمکی برای ارسال درخواست‌های GET با استفاده از URL کامل.
+        /// </summary>
+        private async Task<TResponse> GetAsync<TResponse>(string method)
         {
-            try
-            {
-                var response = await _httpClient.GetAsync($"bot{_options.BotToken}/{method}");
-                return await ProcessResponse<TResponse>(response);
-            }
-            catch (Exception ex)
-            {
-                throw new BaleApiException($"Request failed for method '{method}'. See inner exception for details.", HttpStatusCode.ServiceUnavailable, ex.Message);
-            }
+            // 🔥 تغییر: ساخت URL کامل در اینجا
+            var fullUrl = $"{BaleApiBaseUrl}bot{_options.BotToken}/{method}";
+            var response = await _httpClient.GetAsync(fullUrl);
+            return await ProcessResponse<TResponse>(response);
         }
 
-        private async Task<BaleApiResponse<TResponse>> PostAsync<TResponse>(string method, object payload)
+     /// <summary>
+        /// یک متد کمکی برای ارسال درخواست‌های POST با استفاده از URL کامل.
+        /// </summary>
+        private async Task<TResponse> PostAsync<TResponse>(string method, object payload)
         {
-            try
-            {
-                var jsonContent = new StringContent(JsonSerializer.Serialize(payload, _jsonSerializerOptions), Encoding.UTF8, "application/json");
-                var response = await _httpClient.PostAsync($"bot{_options.BotToken}/{method}", jsonContent);
-                return await ProcessResponse<TResponse>(response);
-            }
-            catch (Exception ex)
-            {
-                throw new BaleApiException($"Request failed for method '{method}'. See inner exception for details.", HttpStatusCode.ServiceUnavailable, ex.Message);
-            }
+            // 🔥 تغییر: ساخت URL کامل در اینجا
+            var fullUrl = $"{BaleApiBaseUrl}bot{_options.BotToken}/{method}";
+            var jsonContent = new StringContent(JsonSerializer.Serialize(payload, _jsonSerializerOptions), Encoding.UTF8, "application/json");
+            var response = await _httpClient.PostAsync(fullUrl, jsonContent);
+            return await ProcessResponse<TResponse>(response);
         }
 
-        private async Task<BaleApiResponse<TResponse>> ProcessResponse<TResponse>(HttpResponseMessage response)
+        /// <summary>
+        /// پاسخ‌های HTTP را پردازش می‌کند. این متد بدون تغییر است.
+        /// </summary>
+        private async Task<TResponse> ProcessResponse<TResponse>(HttpResponseMessage response)
         {
             if (response.IsSuccessStatusCode)
             {
                 var baleResponse = await response.Content.ReadFromJsonAsync<BaleApiResponse<TResponse>>();
-                if (baleResponse?.Ok == true)
+                if (baleResponse?.Ok == true && baleResponse.Result != null)
                 {
-                    return baleResponse;
+                    return baleResponse.Result;
                 }
 
                 var errorDesc = (await response.Content.ReadFromJsonAsync<BaleErrorResponse>())?.Description;
