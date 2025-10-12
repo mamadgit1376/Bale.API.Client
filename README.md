@@ -1,4 +1,3 @@
-
 -----
 
 # Mohammad.Bale.Bot.Client
@@ -7,16 +6,15 @@
 
 **لینک گیت‌هاب:** [https://github.com/mamadgit1376/Bale.API.Client](https://github.com/mamadgit1376/Bale.API.Client)
 
-یک کلاینت دات‌نت ساده، مدرن و قدرتمند برای کار با **API بازوی پیام‌رسان بله**. این کتابخانه تمام پیچیدگی‌های ارسال درخواست‌های HTTP را پنهان کرده و به شما اجازه می‌دهد تا به راحتی با متدها و مدل‌های کاملاً تایپ‌شده (Strongly-typed) با سرورهای بله تعامل داشته باشید.
+یک کلاینت دات‌نت ساده، مدرن و قدرتمند برای کار با **API بازوی پیام‌رسان بله**. این کتابخانه به شما اجازه می‌دهد تا به راحتی با متدها و مدل‌های کاملاً تایپ‌شده (Strongly-typed) با سرورهای بله تعامل داشته باشید.
 
 ## 🚀 ویژگی‌ها
 
   - **کاملاً غیرهمزمان (Async):** تمام متدها به صورت `async/await` پیاده‌سازی شده‌اند.
-  - **پشتیبانی کامل از API:** تمام متدهای اصلی مستندات رسمی بازوی بله را پوشش می‌دهد.
+  - **پشتیبانی از چند ربات:** با استفاده از الگوی Factory، می‌توانید به سادگی کلاینت‌هایی برای ربات‌های مختلف با توکن‌های متفاوت ایجاد کنید.
   - **مدل‌های Strongly-Typed:** تمام آبجکت‌های API (مانند `Message`, `Update`, `Chat`) به صورت کلاس‌های C\# مدل‌سازی شده‌اند.
-  - **راه‌اندازی آسان:** با استفاده از یک متد کمکی (Extension Method) به راحتی در سیستم تزریق وابستگی (Dependency Injection) پروژه‌های ASP.NET Core ثبت می‌شود.
+  - **راه‌اندازی آسان:** با استفاده از یک متد کمکی (Extension Method) به راحتی در سیستم تزریق وابستگی (Dependency Injection) ثبت می‌شود.
   - **مدیریت بهینه HttpClient:** با بهره‌گیری از `IHttpClientFactory` برای مدیریت بهینه ارتباطات.
-  - **URL قابل تنظیم (Configurable URL):** امکان تغییر آدرس پایه API برای سازگاری با محیط‌های مختلف یا آپدیت‌های آینده.
   - **مدیریت خطای ساختاریافته:** پرتاب استثنای سفارشی `BaleApiException` در صورت بروز خطا از سمت API بله.
 
 ## 🔧 نصب
@@ -37,77 +35,72 @@ Install-Package Mohammad.Bale.Bot.Client
 
 ## 🏁 شروع سریع
 
-استفاده از این کتابخانه در یک پروژه ASP.NET Core بسیار ساده است.
+این کتابخانه برای سناریوهایی طراحی شده که شما نیاز به مدیریت چندین ربات با توکن‌های مختلف دارید.
 
-### ۱. پیکربندی `appsettings.json`
+### ۱. ثبت سرویس در `Program.cs`
 
-ابتدا توکن ربات خود را در فایل `appsettings.json` قرار دهید.
-
-```json
-{
-  "BaleBotSettings": {
-    "BotToken": "YOUR_UNIQUE_BOT_TOKEN_FROM_BOTFATHER"
-  }
-}
-```
-
-### ۲. ثبت سرویس در `Program.cs`
-
-سپس، با استفاده از متد کمکی `AddBaleBotClient`، سرویس را در `Program.cs` ثبت کنید.
+ابتدا، فکتوری کلاینت را در `Program.cs` ثبت کنید. این فکتوری به شما اجازه می‌دهد در هر جای برنامه، یک کلاینت جدید برای یک ربات خاص بسازید.
 
 ```csharp
-// using مربوط به کتابخانه را اضافه کنید
-using Bale.API.Client; 
+using Bale.API.Client.Factories; // using مربوط به فکتوری
+using Bale.API.Client.Interfaces; // using مربوط به اینترفیس‌ها
 
 var builder = WebApplication.CreateBuilder(args);
 
 // ... سایر سرویس‌ها
 
-// ثبت کلاینت ربات بله (روش استاندارد)
-builder.Services.AddBaleBotClient(options =>
-{
-    // خواندن توکن از appsettings.json
-    options.BotToken = builder.Configuration["BaleBotSettings:BotToken"];
+// ۱. ثبت IHttpClientFactory به صورت عمومی
+builder.Services.AddHttpClient();
 
-    // (اختیاری) در صورت نیاز می‌توانید آدرس پایه API را تغییر دهید
-    // options.BaseUrl = "https://new.api.bale.ai/"; 
-});
+// ۲. ثبت فکتوری ربات بله به صورت Singleton
+builder.Services.AddSingleton<IBaleBotClientFactory, BaleBotClientFactory>();
 
 var app = builder.Build();
 
 // ...
 ```
 
-### ۳. استفاده در کنترلر
+### ۲. استفاده در کنترلر (با دریافت توکن از کاربر)
 
-حالا می‌توانید اینترفیس `IBaleBotClient` را به هر کنترلر یا سرویسی تزریق کرده و از متدهای آن استفاده کنید.
+حالا می‌توانید `IBaleBotClientFactory` را به کنترلر یا سرویس خود تزریق کرده، توکن ربات را از ورودی (مثلاً هدر درخواست) دریافت کنید و یک کلاینت مخصوص همان ربات بسازید.
 
 ```csharp
 using Bale.API.Client.Interfaces;
 using Bale.API.Client.Models;
+using Bale.API.Client.Factories;
 using Bale.API.Client.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/bot")]
 public class BotController : ControllerBase
 {
-    private readonly IBaleBotClient _baleClient;
+    private readonly IBaleBotClientFactory _baleBotFactory;
 
-    public BotController(IBaleBotClient baleClient)
+    public BotController(IBaleBotClientFactory baleBotFactory)
     {
-        _baleClient = baleClient;
+        _baleBotFactory = baleBotFactory;
     }
 
     /// <summary>
-    /// اطلاعات ربات را برای تست ارتباط دریافت می‌کند.
+    /// اطلاعات یک ربات را با استفاده از توکن دریافتی از هدر، استعلام می‌کند.
     /// </summary>
-    [HttpGet("me")]
-    public async Task<IActionResult> GetMe()
+    [HttpGet("getMe")]
+    public async Task<IActionResult> GetBotInfo([FromHeader(Name = "X-Bot-Token")] string botToken)
     {
+        if (string.IsNullOrEmpty(botToken))
+        {
+            return BadRequest("توکن ربات در هدر 'X-Bot-Token' ارسال نشده است.");
+        }
+
         try
         {
-            var response = await _baleClient.GetMeAsync();
+            // ۱. ساخت کلاینت با توکن کاربر
+            IBaleBotClient botClient = _baleBotFactory.CreateClient(botToken);
+
+            // ۲. استفاده از کلاینت ساخته‌شده
+            var response = await botClient.GetMeAsync();
+            
             if (response.Ok)
             {
                 return Ok(response.Result);
@@ -123,12 +116,16 @@ public class BotController : ControllerBase
     /// <summary>
     /// یک پیام "سلام دنیا" به چت مشخص شده ارسال می‌کند.
     /// </summary>
-    [HttpPost("send-hello")]
-    public async Task<IActionResult> SendHelloMessage([FromQuery] string chatId)
+    [HttpPost("sendMessage")]
+    public async Task<IActionResult> SendHelloMessage(
+        [FromHeader(Name = "X-Bot-Token")] string botToken,
+        [FromQuery] string chatId)
     {
         try
         {
-            var response = await _baleClient.SendMessageAsync(chatId, "سلام دنیا از طرف ربات!");
+            IBaleBotClient botClient = _baleBotFactory.CreateClient(botToken);
+            var response = await botClient.SendMessageAsync(chatId, "سلام دنیا از طرف ربات!");
+
             if (response.Ok)
             {
                 return Ok(response.Result);
