@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net9.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<PackageId>Mohammad.Bale.Bot.Client</PackageId>
+
+		<Version>1.0.0</Version>
+
+		<Authors>mohammad arbab - محمد ارباب</Authors>
+
+		<Description>پروژه ای برای اتصال و مدیریت ربات های پیامرسان بله</Description>
+
+		<RepositoryUrl>https://github.com/your-username/your-bale-bot-repo</RepositoryUrl>
+
+		<PackageTags>bale; bot; api; client; messenger; bale-bot</PackageTags>
+
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.Extensions.Http" Version="9.0.9" />
+		<PackageReference Include="Microsoft.Extensions.Options" Version="9.0.9" />
+	</ItemGroup>
+
+</Project>
