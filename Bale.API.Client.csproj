@@ -13,6 +13,7 @@
 		<Authors>mohammad arbab - محمد ارباب</Authors>
 
 		<Description>پروژه ای برای اتصال و مدیریت ربات های پیامرسان بله</Description>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
 
 		<RepositoryUrl>https://github.com/mamadgit1376/Bale.API.Client</RepositoryUrl>
 
@@ -25,4 +26,7 @@
 		<PackageReference Include="Microsoft.Extensions.Options" Version="9.0.9" />
 	</ItemGroup>
 
+	<ItemGroup>
+		<None Include="README.md" Pack="true" PackagePath="\"/>
+	</ItemGroup>
 </Project>

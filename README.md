@@ -15,9 +15,9 @@
   - **پشتیبانی کامل از API:** تمام متدهای اصلی مستندات رسمی بازوی بله را پوشش می‌دهد.
   - **مدل‌های Strongly-Typed:** تمام آبجکت‌های API (مانند `Message`, `Update`, `Chat`) به صورت کلاس‌های C\# مدل‌سازی شده‌اند.
   - **راه‌اندازی آسان:** با استفاده از یک متد کمکی (Extension Method) به راحتی در سیستم تزریق وابستگی (Dependency Injection) پروژه‌های ASP.NET Core ثبت می‌شود.
-  - **مدیریت بهینه HttpClient:** با بهره‌گیری از `IHttpClientFactory` برای مدیریت بهینه ارتباطات و جلوگیری از خطاهای رایج.
+  - **مدیریت بهینه HttpClient:** با بهره‌گیری از `IHttpClientFactory` برای مدیریت بهینه ارتباطات.
+  - **URL قابل تنظیم (Configurable URL):** امکان تغییر آدرس پایه API برای سازگاری با محیط‌های مختلف یا آپدیت‌های آینده.
   - **مدیریت خطای ساختاریافته:** پرتاب استثنای سفارشی `BaleApiException` در صورت بروز خطا از سمت API بله.
-  - **بدون وابستگی اضافی:** بسیار سبک و با حداقل وابستگی‌ها.
 
 ## 🔧 نصب
 
@@ -41,7 +41,7 @@ Install-Package Mohammad.Bale.Bot.Client
 
 ### ۱. پیکربندی `appsettings.json`
 
-ابتدا توکن ربات خود را که از `@BotFather` دریافت کرده‌اید، در فایل `appsettings.json` قرار دهید.
+ابتدا توکن ربات خود را در فایل `appsettings.json` قرار دهید.
 
 ```json
 {
@@ -56,18 +56,21 @@ Install-Package Mohammad.Bale.Bot.Client
 سپس، با استفاده از متد کمکی `AddBaleBotClient`، سرویس را در `Program.cs` ثبت کنید.
 
 ```csharp
-// فراموش نکنید که using مربوط به کتابخانه را اضافه کنید
+// using مربوط به کتابخانه را اضافه کنید
 using Bale.API.Client; 
 
 var builder = WebApplication.CreateBuilder(args);
 
 // ... سایر سرویس‌ها
 
-// ثبت کلاینت ربات بله
+// ثبت کلاینت ربات بله (روش استاندارد)
 builder.Services.AddBaleBotClient(options =>
 {
     // خواندن توکن از appsettings.json
     options.BotToken = builder.Configuration["BaleBotSettings:BotToken"];
+
+    // (اختیاری) در صورت نیاز می‌توانید آدرس پایه API را تغییر دهید
+    // options.BaseUrl = "https://new.api.bale.ai/"; 
 });
 
 var app = builder.Build();
@@ -80,9 +83,9 @@ var app = builder.Build();
 حالا می‌توانید اینترفیس `IBaleBotClient` را به هر کنترلر یا سرویسی تزریق کرده و از متدهای آن استفاده کنید.
 
 ```csharp
-using Bale.API.Client.Interfaces; // اینترفیس اصلی
-using Bale.API.Client.Models;     // مدل‌ها
-using Bale.API.Client.Exceptions; // استثناهای سفارشی
+using Bale.API.Client.Interfaces;
+using Bale.API.Client.Models;
+using Bale.API.Client.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 
 [ApiController]
@@ -104,13 +107,15 @@ public class BotController : ControllerBase
     {
         try
         {
-            // متد مستقیماً آبجکت User را برمی‌گرداند
-            User botInfo = await _baleClient.GetMeAsync();
-            return Ok(botInfo);
+            var response = await _baleClient.GetMeAsync();
+            if (response.Ok)
+            {
+                return Ok(response.Result);
+            }
+            return BadRequest(response.Description);
         }
         catch (BaleApiException ex)
         {
-            // مدیریت خطاها در بخش "مدیریت خطاها" توضیح داده شده است
             return StatusCode((int)ex.StatusCode, new { Error = ex.Message, Details = ex.ErrorContent });
         }
     }
@@ -123,9 +128,12 @@ public class BotController : ControllerBase
     {
         try
         {
-            // متد مستقیماً آبجکت Message مربوط به پیام ارسال شده را برمی‌گرداند
-            Message sentMessage = await _baleClient.SendMessageAsync(chatId, "سلام دنیا از طرف ربات!");
-            return Ok(sentMessage);
+            var response = await _baleClient.SendMessageAsync(chatId, "سلام دنیا از طرف ربات!");
+            if (response.Ok)
+            {
+                return Ok(response.Result);
+            }
+            return BadRequest(response.Description);
         }
         catch (BaleApiException ex)
         {
@@ -135,75 +143,10 @@ public class BotController : ControllerBase
 }
 ```
 
-## مثال‌های بیشتر
-
-### ارسال پیام همراه با کیبورد شیشه‌ای (Inline Keyboard)
-
-```csharp
-[HttpPost("send-with-keyboard")]
-public async Task<IActionResult> SendMessageWithKeyboard([FromQuery] string chatId)
-{
-    var inlineKeyboard = new InlineKeyboardMarkup
-    {
-        InlineKeyboard = new[]
-        {
-            // ردیف اول
-            new[]
-            {
-                new InlineKeyboardButton { Text = "گوگل", Url = "https://google.com" },
-                new InlineKeyboardButton { Text = "کلیک کن!", CallbackData = "button1_clicked" }
-            },
-            // ردیف دوم
-            new[]
-            {
-                new InlineKeyboardButton { Text = "اطلاعات بیشتر", CallbackData = "show_more_info" }
-            }
-        }
-    };
-
-    try
-    {
-        await _baleClient.SendMessageAsync(chatId, "یک گزینه را انتخاب کنید:", replyMarkup: inlineKeyboard);
-        return Ok("پیام با کیبورد ارسال شد.");
-    }
-    catch (BaleApiException ex)
-    {
-        return BadRequest(new { Error = ex.Message });
-    }
-}
-```
-
-### مدیریت خطاها
-
-این کتابخانه در صورت بروز خطا از سمت API بله، یک استثنا از نوع `BaleApiException` پرتاب می‌کند. شما باید این استثنا را `catch` کنید تا بتوانید خطاها را به درستی مدیریت کنید.
-
-```csharp
-using Bale.API.Client.Exceptions;
-
-// ...
-
-[HttpGet("me-safe")]
-public async Task<IActionResult> GetMeSafely()
-{
-    try
-    {
-        User botInfo = await _baleClient.GetMeAsync();
-        return Ok(botInfo);
-    }
-    catch (BaleApiException ex)
-    {
-        // خطاهای مشخص از سمت API بله (مانند توکن نامعتبر یا چت ناموجود)
-        // می‌توانید بر اساس ex.StatusCode تصمیمات مختلفی بگیرید
-        return StatusCode((int)ex.StatusCode, new { message = ex.Message, details = ex.ErrorContent });
-    }
-    catch (HttpRequestException ex)
-    {
-        // خطاهای کلی شبکه (مانند عدم دسترسی به اینترنت یا سرور بله)
-        return StatusCode(503, new { message = "سرویس بله در حال حاضر در دسترس نیست.", details = ex.Message });
-    }
-}
-```
-
 ## 🤝 مشارکت
 
 از هرگونه مشارکت در این پروژه استقبال می‌شود. لطفاً برای گزارش باگ یا ارائه پیشنهاد، یک Issue جدید در مخزن گیت‌هاب پروژه ثبت کنید.
+
+## 📄 لایسنس
+
+این پروژه تحت لایسنس MIT منتشر شده است.

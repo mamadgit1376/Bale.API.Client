@@ -216,5 +216,6 @@ namespace Bale.API.Client
             throw new BaleApiException($"Request failed with status code {response.StatusCode}.", response.StatusCode, errorContent);
         }
 
-        #endregion    }
+        #endregion    
     }
+}
