@@ -119,5 +119,12 @@ namespace Bale.API.Client.Models
         /// </summary>
         [JsonPropertyName("successful_payment")]
         public SuccessfulPayment? SuccessfulPayment { get; set; }
+
+        // 🔥 فیلد جدید در اینجا اضافه شده است
+        /// <summary>
+        /// (اختیاری) صفحه‌کلید شیشه‌ای (Inline Keyboard) که به پیام پیوست شده است.
+        /// </summary>
+        [JsonPropertyName("reply_markup")]
+        public InlineKeyboardMarkup? ReplyMarkup { get; set; }
     }
 }
