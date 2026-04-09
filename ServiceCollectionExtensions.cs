@@ -1,12 +1,6 @@
 ﻿using Bale.API.Client.Interface;
 using Bale.API.Client.Models;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Bale.API.Client
 {
@@ -22,7 +16,7 @@ namespace Bale.API.Client
 
             // 3. Register your client service
             services.AddScoped<IBaleBotClient, BaleBotClient>();
-
+            services.AddScoped<ISafirClient, SafirClient>();
             return services;
         }
     }

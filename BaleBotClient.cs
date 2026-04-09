@@ -104,7 +104,7 @@ namespace Bale.API.Client
         {
             var payload = new { chat_id = chatId, latitude, longitude, reply_to_message_id = replyToMessageId, reply_markup = replyMarkup };
             return await PostAsync<Message>("sendLocation", payload);
-        }
+        }   
 
         public async Task<BaleApiResponse<Message>> SendContactAsync(string chatId, string phoneNumber, string firstName, string? lastName = null, int? replyToMessageId = null, object? replyMarkup = null)
         {

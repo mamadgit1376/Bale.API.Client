@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.Json.Serialization;
-using System.Threading.Tasks;
+﻿using System.Text.Json.Serialization;
 
 namespace Bale.API.Client.Models
 {
@@ -38,6 +33,6 @@ namespace Bale.API.Client.Models
         [JsonPropertyName("callback_query")]
         public CallbackQuery? CallbackQuery { get; set; }
 
-        // سایر انواع آپدیت مانند pre_checkout_query و ... نیز می‌توانند در اینجا اضافه شوند.
+        
     }
 }

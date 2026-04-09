@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.14.36511.14 d17.14
+# Visual Studio Version 18
+VisualStudioVersion = 18.3.11520.95 d18.3
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bale.API.Client", "Bale.API.Client.csproj", "{2C5DF4DF-1433-7E23-892A-4C83101F6E20}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BaleBot1", "..\BaleBot1\BaleBot1.csproj", "{13C8A8B8-9632-4FD9-B8A4-4E233E62CB41}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{2C5DF4DF-1433-7E23-892A-4C83101F6E20}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2C5DF4DF-1433-7E23-892A-4C83101F6E20}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2C5DF4DF-1433-7E23-892A-4C83101F6E20}.Release|Any CPU.Build.0 = Release|Any CPU
+		{13C8A8B8-9632-4FD9-B8A4-4E233E62CB41}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{13C8A8B8-9632-4FD9-B8A4-4E233E62CB41}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{13C8A8B8-9632-4FD9-B8A4-4E233E62CB41}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{13C8A8B8-9632-4FD9-B8A4-4E233E62CB41}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

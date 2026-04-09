@@ -1,7 +1,6 @@
 ﻿using Bale.API.Client.Interface;
 using Bale.API.Client.Models;
 using Microsoft.Extensions.Options;
-using System.Net.Http;
 
 namespace Bale.API.Client.Factories
 {
@@ -20,6 +19,14 @@ namespace Bale.API.Client.Factories
 
             // 🔥 تغییر اصلی: به جای ساخت HttpClient، خودِ فکتوری را به سازنده پاس می‌دهیم
             return new BaleBotClient(_httpClientFactory, options);
+        }
+
+        public ISafirClient CreateSafirClient(string safirAccessToken)
+        {
+            var options = Options.Create(new BaleBotClientOptions { SafirAccessToken = safirAccessToken });
+
+            // 🔥 تغییر اصلی: به جای ساخت HttpClient، خودِ فکتوری را به سازنده پاس می‌دهیم
+            return new SafirClient(_httpClientFactory, options);
         }
     }
 }
