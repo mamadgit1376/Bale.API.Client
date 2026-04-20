@@ -24,5 +24,9 @@ namespace Bale.API.Client.Models
         /// </summary>
         [JsonPropertyName("callback_data")]
         public string? CallbackData { get; set; }
+
+
+        //[JsonPropertyName("request_contact")]
+        //public bool? RequestContact { get; set; }
     }
 }
