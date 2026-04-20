@@ -1,21 +1,25 @@
-﻿-----
+﻿```
+# Bale.Bot.Client.Mr.Arbab
 
-# Mohammad.Bale.Bot.Client
-
-[](https://www.google.com/search?q=https://www.nuget.org/packages/Mohammad.Bale.Bot.Client/)
+[](https://www.nuget.org/packages/Bale.Bot.Client.Mr.Arbab/)
 
 **لینک گیت‌هاب:** [https://github.com/mamadgit1376/Bale.API.Client](https://github.com/mamadgit1376/Bale.API.Client)
 
-یک کلاینت دات‌نت ساده، مدرن و قدرتمند برای کار با **API بازوی پیام‌رسان بله**. این کتابخانه تمام پیچیدگی‌های ارسال درخواست‌های HTTP را پنهان کرده و به شما اجازه می‌دهد تا به راحتی با متدها و مدل‌های کاملاً تایپ‌شده (Strongly-typed) با سرورهای بله تعامل داشته باشید.
+یک کلاینت دات‌نت ساده، مدرن و قدرتمند برای کار با **API بازوی پیام‌رسان بله** و **سرویس سفیر بله**. این کتابخانه تمام پیچیدگی‌های ارسال درخواست‌های HTTP را پنهان کرده و به شما اجازه می‌دهد تا به راحتی با متدها و مدل‌های کاملاً تایپ‌شده (Strongly-typed) با سرورهای بله تعامل داشته باشید.
 
 ## 🚀 ویژگی‌ها
 
   - **کاملاً غیرهمزمان (Async):** تمام متدها به صورت `async/await` پیاده‌سازی شده‌اند.
   - **پشتیبانی از چند ربات:** با استفاده از الگوی Factory، می‌توانید به سادگی کلاینت‌هایی برای ربات‌های مختلف با توکن‌های متفاوت در لحظه ایجاد کنید.
-  - **مدل‌های Strongly-Typed:** تمام آبجکت‌های API (مانند `Message`, `Update`, `Chat`) به صورت کلاس‌های C\# مدل‌سازی شده‌اند.
-  - **راه‌اندازی آسان:** با ثبت ساده `Factory` در سیستم تزریق وابستگی (Dependency Injection).
+  - **مدل‌های Strongly-Typed:** تمام آبجکت‌های API به صورت کلاس‌های C# مدل‌سازی شده‌اند.
+  - **راه‌اندازی آسان:** با ثبت ساده سرویس‌ها در سیستم تزریق وابستگی (Dependency Injection).
   - **مدیریت بهینه HttpClient:** با بهره‌گیری از `IHttpClientFactory` برای مدیریت بهینه ارتباطات.
   - **مدیریت خطای ساختاریافته:** پرتاب استثنای سفارشی `BaleApiException` در صورت بروز خطا از سمت API بله.
+  - **پشتیبانی از API ربات بله**
+  - **پشتیبانی از سرویس سفیر بله** برای:
+    - ارسال پیام تکی
+    - ارسال پیام گروهی
+    - آپلود فایل
 
 ## 🔧 نصب
 
@@ -24,16 +28,25 @@
 **از طریق .NET CLI:**
 
 ```bash
-dotnet add package Mohammad.Bale.Bot.Client
+dotnet add package Bale.Bot.Client.Mr.Arbab
 ```
 
 **از طریق Package Manager Console:**
 
 ```powershell
-Install-Package Mohammad.Bale.Bot.Client
+Install-Package Bale.Bot.Client.Mr.Arbab
 ```
 
 ## 🏁 شروع سریع
+
+این کتابخانه برای دو سناریوی اصلی مناسب است:
+
+| سناریو | توضیح |
+|--------|-------|
+| API ربات بله | برای کار با توکن ربات و متدهایی مثل `SendMessageAsync` و `GetMeAsync` |
+| سرویس سفیر | برای ارسال پیام به شماره موبایل، ارسال گروهی و آپلود فایل با `SafirAccessToken` |
+
+## بخش اول: استفاده از کلاینت ربات بله
 
 این کتابخانه برای سناریوهایی طراحی شده که شما نیاز به مدیریت یک یا چندین ربات با توکن‌های مختلف دارید.
 
@@ -66,7 +79,6 @@ var app = builder.Build();
 
 ```csharp
 using Bale.API.Client.Interface;
-using Bale.API.Client.Models;
 using Bale.API.Client.Factories;
 using Bale.API.Client.Exceptions;
 using Microsoft.AspNetCore.Mvc;
@@ -105,6 +117,7 @@ public class BotController : ControllerBase
             {
                 return Ok(response.Result);
             }
+
             // مدیریت خطایی که از سمت API بله گزارش شده است
             return BadRequest(new { Error = response.Description });
         }
@@ -132,6 +145,7 @@ public class BotController : ControllerBase
             {
                 return Ok(response.Result);
             }
+
             return BadRequest(new { Error = response.Description });
         }
         catch (BaleApiException ex)
@@ -142,6 +156,245 @@ public class BotController : ControllerBase
 }
 ```
 
+## بخش دوم: استفاده از SafirClient
+
+`SafirClient` برای ارتباط با API سفیر بله طراحی شده و از `SafirAccessToken` استفاده می‌کند.
+
+**آدرس پایه API سفیر:**
+
+```text
+https://safir.bale.ai/api/v3
+```
+
+### ۱. تنظیمات `appsettings.json`
+
+برای استفاده از سفیر، باید `SafirAccessToken` را در تنظیمات پر��ژه تعریف کنید:
+
+```json
+{
+  "BaleBotClientOptions": {
+    "SafirAccessToken": "YOUR_SAFIR_ACCESS_TOKEN"
+  }
+}
+```
+
+### ۲. ثبت سرویس در `Program.cs`
+
+```csharp
+using Bale.API.Client;
+using Bale.API.Client.Interface;
+using Bale.API.Client.Models;
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddHttpClient();
+
+builder.Services.Configure<BaleBotClientOptions>(
+    builder.Configuration.GetSection("BaleBotClientOptions"));
+
+builder.Services.AddScoped<ISafirClient, SafirClient>();
+
+var app = builder.Build();
+```
+
+### ۳. استفاده از `ISafirClient` در کنترلر
+
+```csharp
+using Bale.API.Client.Exceptions;
+using Bale.API.Client.Interface;
+using Bale.API.Client.Models;
+using Microsoft.AspNetCore.Mvc;
+
+[ApiController]
+[Route("api/safir")]
+public class SafirController : ControllerBase
+{
+    private readonly ISafirClient _safirClient;
+
+    public SafirController(ISafirClient safirClient)
+    {
+        _safirClient = safirClient;
+    }
+
+    [HttpPost("send")]
+    public async Task<IActionResult> SendMessage()
+    {
+        try
+        {
+            var messageData = new SafirMessageData
+            {
+                // مقداردهی مطابق مدل شما
+            };
+
+            var response = await _safirClient.SendSafirMessageAsync(
+                botId: 12345,
+                phoneNumber: "09123456789",
+                safirMessageData: messageData,
+                requestId: Guid.NewGuid().ToString());
+
+            if (response.Ok)
+            {
+                return Ok(response);
+            }
+
+            return BadRequest(response);
+        }
+        catch (BaleApiException ex)
+        {
+            return StatusCode((int)ex.StatusCode, new
+            {
+                Error = ex.Message,
+                Details = ex.ErrorContent
+            });
+        }
+    }
+}
+```
+
+### ۴. ارسال پیام تکی در سفیر
+
+```csharp
+var messageData = new SafirMessageData
+{
+    // مقداردهی مطابق مدل پروژه
+};
+
+var result = await _safirClient.SendSafirMessageAsync(
+    botId: 12345,
+    phoneNumber: "09123456789",
+    safirMessageData: messageData,
+    requestId: "req-001");
+```
+
+### ۵. ارسال گروهی در سفیر
+
+```csharp
+var messages = new List<BatchMessage>
+{
+    new BatchMessage
+    {
+        // phone_number = ...
+        // message_data = ...
+    },
+    new BatchMessage
+    {
+        // phone_number = ...
+        // message_data = ...
+    }
+};
+
+var result = await _safirClient.SendGroupSafirMessagesAsync(
+    botId: 12345,
+    batchMessages: messages,
+    requestId: "batch-001");
+```
+
+### ۶. آپلود فایل در سفیر
+
+```csharp
+using var stream = System.IO.File.OpenRead("sample.pdf");
+
+var result = await _safirClient.UploadSafirFileAsync(
+    fileStream: stream,
+    fileName: "sample.pdf",
+    contentType: "application/pdf");
+```
+
+## متدهای `SafirClient`
+
+| متد | توضیح |
+|--------|-------|
+| `SendSafirMessageAsync` | ارسال پیام به یک شماره موبایل |
+| `SendGroupSafirMessagesAsync` | ارسال گروهی پیام |
+| `UploadSafirFileAsync` | آپلود فایل |
+
+## پارامترهای متدهای سفیر
+
+### `SendSafirMessageAsync`
+
+| پارامتر | نوع | توضیح |
+|--------|-----|-------|
+| `botId` | `int` | شناسه ربات |
+| `phoneNumber` | `string` | شمارهایل گیرنده |
+| `safirMessageData` | `SafirMessageData` | محتوای پیام |
+| `requestId` | `string?` | شناسه یکتای اختیاری برای رهگیری درخواست |
+
+### `SendGroupSafirMessagesAsync`
+
+| پارامتر | نوع | توضیح |
+|--------|-----|-------|
+| `botId` | `int` | شناسه ربات |
+| `batchMessages` | `List<BatchMessage>` | لیست پیام‌ها برای ارسال |
+| `requestId` | `string?` | شناسه یکتای اختیاری درخواست |
+
+### `UploadSafirFileAsync`
+
+| پارامتر | نوع | توضیح |
+|--------|-----|-------|
+| `fileStream` | `Stream` | استریم فایل |
+| `fileName` | `string` | نام فایل |
+| `contentType` | `string` | نوع فایل مانند `image/png` یا `application/pdf` |
+
+## مدیریت خطاها
+
+در این کتابخانه، خطاهای شبکه، خطاهای ساختاری و خطاهای برگشتی از API معمولاً با `BaleApiException` مدیریت می‌شوند.
+
+```csharp
+try
+{
+    var response = await _safirClient.UploadSafirFileAsync(stream, "file.pdf", "application/pdf");
+}
+catch (BaleApiException ex)
+{
+    Console.WriteLine($"StatusCode: {ex.StatusCode}");
+    Console.WriteLine($"Message: {ex.Message}");
+    Console.WriteLine($"Details: {ex.ErrorContent}");
+}
+```
+
+## نکات مهم
+
+| نکته | توضیح |
+|--------|-------|
+| `SafirAccessToken` | برای تمام متدهای سفیر الزامی است |
+| `botId` | نباید صفر باشد |
+| `phoneNumber` | نباید خالی باشد |
+| `fileStream` | باید معتبر، قابل خواندن و باز باشد |
+| `requestId` | اختیاری است اما برای رهگیری درخواست‌ها پیشنهاد می‌شود |
+
+## ساختار کلی پروژه
+
+| بخش | توضیح |
+|--------|-------|
+| `IBaleBotClient` | اینترفیس کلاینت ربات بله |
+| `IBaleBotClientFactory` | فکتوری ساخت کلاینت برای توکن‌های مختلف |
+| `ISafirClient` | اینترفیس سرویس سفیر |
+| `BaleBotClientOptions` | تنظیمات مربوط به کلاینت |
+| `BaleApiException` | استثنای سفارشی برای مدیریت خطاها |
+| `Models` | مدل‌های درخواست و پاسخ |
+
+## مثال ثبت همزمان BotClient و SafirClient
+
+```csharp
+using Bale.API.Client;
+using Bale.API.Client.Factories;
+using Bale.API.Client.Interface;
+using Bale.API.Client.Models;
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddHttpClient();
+
+builder.Services.AddSingleton<IBaleBotClientFactory, BaleBotClientFactory>();
+
+builder.Services.Configure<BaleBotClientOptions>(
+    builder.Configuration.GetSection("BaleBotClientOptions"));
+
+builder.Services.AddScoped<ISafirClient, SafirClient>();
+
+var app = builder.Build();
+```
+
 ## 🤝 مشارکت
 
 از هرگونه مشارکت در این پروژه استقبال می‌شود. لطفاً برای گزارش باگ یا ارائه پیشنهاد، یک Issue جدید در مخزن گیت‌هاب پروژه ثبت کنید.
@@ -149,3 +402,4 @@ public class BotController : ControllerBase
 ## 📄 لایسنس
 
 این پروژه تحت لایسنس MIT منتشر شده است.
+```
