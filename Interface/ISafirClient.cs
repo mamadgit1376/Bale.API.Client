@@ -1,6 +1,7 @@
 ﻿using Bale.API.Client.Models;
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Text;
 
 namespace Bale.API.Client.Interface
@@ -23,7 +24,7 @@ namespace Bale.API.Client.Interface
         /// <param name="batchMessages">پیام ها</param>
         /// <param name="requestId">شماره درخواست </param>
         /// <returns></returns>
-        Task<SafirBatchMessageApiResponse> SendGroupSafirMessagesAsync(int botId, List<BatchMessage> batchMessages, string? requestId);
+        Task<(SafirBatchMessageApiResponse? res, HttpStatusCode Status)> SendGroupSafirMessagesAsync(int botId, List<BatchMessage> batchMessages, string? requestId);
 
         /// <summary>
         /// آپلود فایل به سرور بله به صورت Multipart/Form-Data

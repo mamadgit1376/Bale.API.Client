@@ -48,7 +48,7 @@ namespace Bale.API.Client
         }
 
 
-        public async Task<SafirBatchMessageApiResponse> SendGroupSafirMessagesAsync(int botId, List<BatchMessage> batchMessages, string? requestId)
+        public async Task<(SafirBatchMessageApiResponse? res, HttpStatusCode Status)> SendGroupSafirMessagesAsync(int botId, List<BatchMessage> batchMessages, string? requestId)
         {
             if (string.IsNullOrWhiteSpace(_options?.SafirAccessToken))
                 throw new InvalidOperationException("Access token is missing.");
@@ -146,7 +146,7 @@ namespace Bale.API.Client
                 throw new BaleApiException($"Request failed for method '{method}'. See inner exception for details.", HttpStatusCode.ServiceUnavailable, ex.Message, ex);
             }
         }
-        private async Task<SafirBatchMessageApiResponse> SafirBatchPostAsync(string method, object payload)
+        private async Task<(SafirBatchMessageApiResponse? res, HttpStatusCode Status)> SafirBatchPostAsync(string method, object payload)
         {
             try
             {
@@ -168,7 +168,12 @@ namespace Bale.API.Client
 
                 // ارسال
                 var response = await client.SendAsync(request);
-                return await ProcessBatchResponse(response);
+                SafirBatchMessageApiResponse? res = null;
+                if (response.StatusCode == HttpStatusCode.OK)
+                {
+                    res = await ProcessBatchResponse(response);
+                }
+                return (res, response.StatusCode);
 
             }
             catch (Exception ex)
