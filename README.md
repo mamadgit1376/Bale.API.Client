@@ -300,15 +300,77 @@ var result = await _safirClient.UploadSafirFileAsync(
     contentType: "application/pdf");
 ```
 
+### ۷. ارسال رمز یک‌بارمصرف (OTP) در سفیر
+
+```csharp
+var result = await _safirClient.SendSafirOtpAsync(
+    botId: 12345,
+    phoneNumber: "989123456789",
+    otp: "001234",
+    requestId: Guid.NewGuid().ToString("N"));
+```
+
+رمز باید فقط شامل ارقام `0` تا `9` باشد؛ صفرهای ابتدایی حفظ می‌شوند. شماره مقصد باید با `98` یا `+98` شروع شود. ارسال از مسیر `/api/v3/send_message` با فیلد `message_data.otp_message.otp` و هدر `api-access-key` انجام می‌شود؛ مقدار هدر از `SafirAccessToken` گرفته می‌شود. `requestId` اختیاری است؛ برای تکرار همان درخواست، همان شناسه را استفاده کنید.
+
+### ۸. ارسال OTP با نام کاربری و رمز عبور (v2)
+
+متدهای v2 از نام کاربری و رمز عبور برای دریافت توکن استفاده می‌کنند؛ تنظیم `SafirAccessToken` مخصوص متدهای v3 است و برای v2 لازم نیست. ثبت سرویس در `Program.cs`:
+
+```csharp
+using Bale.API.Client;
+
+builder.Services.AddBaleBotClient(options => { });
+```
+
+پس از تزریق `ISafirClient`، مطابق کد قدیمی:
+
+```csharp
+using Bale.API.Client.Models;
+
+var token = await _safirClient.AuthenticateAsync(
+    _messagingToken.UserName, _messagingToken.Password);
+
+if (token == null || string.IsNullOrWhiteSpace(token.AccessToken))
+    throw new InvalidOperationException("احراز هویت سفیر ناموفق بود.");
+
+var response = await _safirClient.SendOtpAsync(new SendOtpRequest
+{
+    Phone = phoneNumber,
+    Otp = otp // int
+}, token.AccessToken);
+
+if (response == null || response.Code != null)
+    throw new InvalidOperationException(response?.Message ?? "ارسال OTP ناموفق بود.");
+```
+
+`AuthenticateAsync` به `/api/v2/auth/token` درخواست `application/x-www-form-urlencoded` با `grant_type=client_credentials` و `scope=read` می‌فرستد؛ در پاسخ HTTP ناموفق، مانند کد قدیمی `null` برمی‌گرداند. `SendOtpAsync` به `/api/v2/send_otp` درخواست JSON با فیلدهای `phone` و `otp` و هدر `Authorization: Bearer` می‌فرستد. پاسخ ارسال، از جمله بدنه خطای API، در `SendOtpResponse` برگردانده می‌شود؛ قبل از اعلام موفقیت، `Code` را بررسی کنید.
+
 ## متدهای `SafirClient`
 
 | متد | توضیح |
 |--------|-------|
+| `AuthenticateAsync` | دریافت توکن سفیر v2 با نام کاربری و رمز عبور |
+| `SendOtpAsync` | ارسال OTP با سفیر v2 و توکن Bearer |
 | `SendSafirMessageAsync` | ارسال پیام به یک شماره موبایل |
+| `SendSafirOtpAsync` | ارسال رمز یک‌بارمصرف عددی |
 | `SendGroupSafirMessagesAsync` | ارسال گروهی پیام |
 | `UploadSafirFileAsync` | آپلود فایل |
 
 ## پارامترهای متدهای سفیر
+
+### `AuthenticateAsync` (v2)
+
+| پارامتر | نوع | توضیح |
+|--------|-----|-------|
+| `clientId` | `string` | نام کاربری قدیمی (`UserName`) |
+| `clientSecret` | `string` | رمز عبور قدیمی (`Password`) |
+
+### `SendOtpAsync` (v2)
+
+| پارامتر | نوع | توضیح |
+|--------|-----|-------|
+| `request` | `SendOtpRequest` | `Phone` شماره مقصد و `Otp` رمز از نوع `int` |
+| `accessToken` | `string` | مقدار `AccessToken` از پاسخ احراز هویت |
 
 ### `SendSafirMessageAsync`
 
@@ -318,6 +380,15 @@ var result = await _safirClient.UploadSafirFileAsync(
 | `phoneNumber` | `string` | شمارهایل گیرنده |
 | `safirMessageData` | `SafirMessageData` | محتوای پیام |
 | `requestId` | `string?` | شناسه یکتای اختیاری برای رهگیری درخواست |
+
+### `SendSafirOtpAsync`
+
+| پارامتر | نوع | توضیح |
+|--------|-----|-------|
+| `botId` | `int` | شناسه بازوی ارسال‌کننده |
+| `phoneNumber` | `string` | شماره گیرنده با پیش‌شماره `98` یا `+98` |
+| `otp` | `string` | رمز عددی؛ صفرهای ابتدایی حفظ می‌شوند |
+| `requestId` | `string?` | شناسه اختیاری برای جلوگیری از ارسال تکراری؛ پیش‌فرض `null` |
 
 ### `SendGroupSafirMessagesAsync`
 
@@ -356,7 +427,7 @@ catch (BaleApiException ex)
 
 | نکته | توضیح |
 |--------|-------|
-| `SafirAccessToken` | برای تمام متدهای سفیر الزامی است |
+| `SafirAccessToken` | کلید API برای متدهای سفیر v3؛ متدهای v2 توکن را به‌عنوان پارامتر دریافت می‌کنند |
 | `botId` | نباید صفر باشد |
 | `phoneNumber` | نباید خالی باشد |
 | `fileStream` | باید معتبر، قابل خواندن و باز باشد |

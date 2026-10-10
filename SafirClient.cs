@@ -20,6 +20,7 @@ namespace Bale.API.Client
 
         // آدرس پایه API بله به صورت ثابت در اینجا تعریف شده است.
         private const string SafirApiBaseUrl = "https://safir.bale.ai/api/v3";
+        private const string SafirV2ApiBaseUrl = "https://safir.bale.ai/api/v2";
 
         public SafirClient(IHttpClientFactory httpClientFactory, IOptions<BaleBotClientOptions> options)
         {
@@ -34,6 +35,47 @@ namespace Bale.API.Client
 
 
 
+        public async Task<AuthenticationResponse?> AuthenticateAsync(string clientId, string clientSecret)
+        {
+            var client = _httpClientFactory.CreateClient("BaleApiClient");
+            var requestData = new Dictionary<string, string>
+            {
+                ["grant_type"] = "client_credentials",
+                ["client_id"] = clientId,
+                ["client_secret"] = clientSecret,
+                ["scope"] = "read"
+            };
+
+            using var request = new HttpRequestMessage(HttpMethod.Post, $"{SafirV2ApiBaseUrl}/auth/token")
+            {
+                Content = new FormUrlEncodedContent(requestData)
+            };
+            using var response = await client.SendAsync(request);
+            if (!response.IsSuccessStatusCode)
+                return null;
+
+            var contentStream = await response.Content.ReadAsStreamAsync();
+            return await JsonSerializer.DeserializeAsync<AuthenticationResponse>(contentStream);
+        }
+
+        public async Task<SendOtpResponse?> SendOtpAsync(SendOtpRequest request, string accessToken)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+            ArgumentException.ThrowIfNullOrWhiteSpace(accessToken);
+
+            var client = _httpClientFactory.CreateClient("BaleApiClient");
+            var json = JsonSerializer.Serialize(request);
+            using var httpRequest = new HttpRequestMessage(HttpMethod.Post, $"{SafirV2ApiBaseUrl}/send_otp")
+            {
+                Content = new StringContent(json, Encoding.UTF8, "application/json")
+            };
+            httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+            using var response = await client.SendAsync(httpRequest);
+            var contentStream = await response.Content.ReadAsStreamAsync();
+            return await JsonSerializer.DeserializeAsync<SendOtpResponse>(contentStream);
+        }
+
         public async Task<SafirApiResponse> SendSafirMessageAsync(int botId, string phoneNumber, SafirMessageData safirMessageData, string? requestId)
         {
             if (string.IsNullOrWhiteSpace(_options?.SafirAccessToken))
@@ -45,6 +87,19 @@ namespace Bale.API.Client
 
             var payload = new { bot_id = botId, request_id = requestId, phone_number = phoneNumber, message_data = safirMessageData };
             return await SafirPostAsync("send_message", payload);
+        }
+
+        public Task<SafirApiResponse> SendSafirOtpAsync(int botId, string phoneNumber, string otp, string? requestId = null)
+        {
+            if (string.IsNullOrWhiteSpace(otp) || otp.Any(c => c < '0' || c > '9'))
+                throw new ArgumentException("رمز یک‌بارمصرف باید فقط شامل ارقام 0 تا 9 باشد.", nameof(otp));
+
+            var messageData = new SafirMessageData
+            {
+                OTPMessage = new SafirOTPMessage { otp = otp }
+            };
+
+            return SendSafirMessageAsync(botId, phoneNumber, messageData, requestId);
         }
 
 

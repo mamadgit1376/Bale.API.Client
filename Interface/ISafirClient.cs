@@ -9,6 +9,16 @@ namespace Bale.API.Client.Interface
     public interface ISafirClient
     {
         /// <summary>
+        /// دریافت توکن سفیر v2 با نام کاربری و رمز عبور؛ در پاسخ HTTP ناموفق، null برمی‌گرداند.
+        /// </summary>
+        Task<AuthenticationResponse?> AuthenticateAsync(string clientId, string clientSecret);
+
+        /// <summary>
+        /// ارسال OTP با سفیر v2 و توکن Bearer؛ پاسخ موفق یا خطای API را برمی‌گرداند.
+        /// </summary>
+        Task<SendOtpResponse?> SendOtpAsync(SendOtpRequest request, string accessToken);
+
+        /// <summary>
         /// ارسال پیام تکی با سفیر  به شماره همراه 
         /// </summary>
         /// <param name="botId"></param>
@@ -17,6 +27,16 @@ namespace Bale.API.Client.Interface
         /// <param name="requestId">اختیاری</param>
         /// <returns></returns>
         Task<SafirApiResponse> SendSafirMessageAsync(int botId, string phoneNumber, SafirMessageData safirMessageData, string? requestId);
+
+        /// <summary>
+        /// ارسال رمز یک‌بارمصرف عددی با سفیر
+        /// </summary>
+        /// <param name="botId">شناسه بازوی ارسال‌کننده</param>
+        /// <param name="phoneNumber">+98 or 98</param>
+        /// <param name="otp">رمز شامل ارقام 0 تا 9</param>
+        /// <param name="requestId">شناسه اختیاری برای جلوگیری از ارسال تکراری</param>
+        Task<SafirApiResponse> SendSafirOtpAsync(int botId, string phoneNumber, string otp, string? requestId = null);
+
         /// <summary>
         /// ارسال پیام گروهی با سفیر
         /// </summary>
